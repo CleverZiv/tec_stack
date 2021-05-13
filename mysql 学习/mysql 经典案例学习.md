@@ -173,3 +173,72 @@ from Teacher
 where Tname like '李%'
 ```
 
+## 9、查询学习过【张三】老师课程的同学的信息
+
+1. Course 中获得 cname = '张三' 的 cid
+2. sc 中获得 cid 为 1 中结果的 sid
+3. 根据 2 中的 sid 在 student 中获取同学的信息
+
+```sql
+select *
+from Student
+where SId in (select SId
+              from SC
+              where CId in (select CId
+                            from Course
+                            where TId in (select TId
+                                          from Teacher
+                                          where Tname = '张三')));
+```
+
+## 10、查询没有学完所有课程的同学的信息
+
+1. 查询课程总数
+2. 查询成绩表中课程数量小于课程总数的 sid
+3. 根据 2 中的 sid 在 student 表中查询结果
+
+```sql
+select *
+from Student
+where SId in (select SId
+              from SC
+              group by SId
+              having count(CId) < (select count(1)
+                                   from Course));
+```
+
+## 11、查询至少有一门课与学号为 01 的同学所学课程相同的同学的信息
+
+1. 查询 01 同学的所有课程
+2. 只要上的可能中有 1 中查出的课程，就满足条件
+3. 对结果去重
+
+```sql
+select distinct b.*
+from sc a
+         inner join student b on a.SId = b.SId
+where a.CId in (select CId from SC where SId = '01')
+```
+
+## 12、查询和 01 同学学习的课程完全相同的同学
+
+- 如何保证和 01 同学学习的课程完全相同？
+  - 没有学 01 学习的课程内之外的课程
+  - 学习的课程数量和 01 的课程数量一致
+
+1. 先计算 01 同学学了哪些课程
+2. 再找出哪些同学学的课程里有非 1 中的结果
+3. 除下2中的记录后，以 sid 分组，查询课程数量与 01 一致的 sid
+
+```sql
+select SId
+from sc
+where SId not in (select SId
+                  from SC
+                  where CId not in (select CId from SC where SId = '01'))
+group by SId
+having count(1) = (select count(1) from SC where SId = '01')
+```
+
+
+
