@@ -240,5 +240,64 @@ group by SId
 having count(1) = (select count(1) from SC where SId = '01')
 ```
 
+## 13、查询没学过“张三”老师讲授的任一门课程的学生姓名
 
+1. 找出学习过张三老师课程的 sid 记录
+2. `not in`找出没学过的学生
+
+```go
+select d.Sname
+from Student d
+where d.SId not in (select c.SId
+                    from SC c
+                    where c.CId in (select b.CId
+                                    from Course b
+                                    where b.TId = (select a.TId
+                                                   from Teacher a
+                                                   where a.Tname = '张三')))
+```
+
+## 14、查询两门及以上课程不及格的同学的学号、姓名及其平均成绩
+
+1. 筛选出所有低于60分的成绩记录
+2. 以 `group by`分组，找出数量大于等于2的同学的 sid
+3. 拿着 sid 去获取同学的学号、姓名和平均成绩信息
+
+```go
+select a.SId, avg(score) as avg_score
+from SC a
+         left join Student b on a.SId = b.SId
+         inner join (select SId
+                     from SC
+                     where score < 60
+                     group by SId
+                     having count(1) > 1) c
+                    on a.SId = c.SId
+group by a.SId;
+```
+
+## 15、检索“01”课程分数小于60，按分数降序排列的学生信息
+
+```go
+select b.*, c.score
+from Student b
+         inner join (select a.SId,a.score
+                     from SC a
+                     where a.CId = '01'
+                       and score < 60
+                     order by a.score desc) c
+                    on b.SId = c.SId
+```
+
+## 16、按平均成绩从高到低显示所有学生的所有课程的成绩以及平均成绩
+
+```go
+select a.*, avg_score
+from SC a
+         left join (select SId, avg(score) as avg_score
+                    from SC
+                    group by SId) b
+                   on a.SId = b.SId
+order by avg_score desc
+```
 
