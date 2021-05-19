@@ -301,3 +301,82 @@ from SC a
 order by avg_score desc
 ```
 
+### 17、查询各科成绩的最高分、最低分和平均分
+
+要求以如下形式显示：课程id，课程name，最高分，最低分，平均分，及格率，中等率，优良率，优秀率。其中及格>=60，中等70~80，优良80~90，优秀>=90，要求输出课程号和选修人数，查询结果按人数降序排列，若人数相同，按课程号升序排列
+
+分组聚合，考察条件计数
+
+```sql
+select CId,
+       max(score)                                                             as 最高分,
+       min(score)                                                                最低分,
+       avg(score)                                                             as 平均分,
+       count(1)                                                               as 选修人数,
+       sum(case when score >= 60 then 1 else 0 end) / count(1)                as 及格率,
+       sum(case when score >= 70 and score < 80 then 1 else 0 end) / count(1) as 中等率,
+       sum(case when score >= 80 and score < 90 then 1 else 0 end) / count(1) as 优良率,
+       sum(case when score >= 90 then 1 else 0 end) / count(1)                as 优秀率
+from SC
+group by CId
+order by 选修人数 desc, CId asc;
+```
+
+注意 `case when` 的用法
+
+### 18、按各科成绩进行排序，并显示排名，score 重复时继续排序
+
+用到 sql 中的变量
+
+```sql
+## 变量声明 必须以 @ 开头
+select @rank
+或
+set @rank
+## 变量声明且初始化
+select @rank:=1
+或
+set @rank:=1
+```
+
+```sql
+select
+SId,CId,score,@`rank`:=@`rank`+1 as 名次
+from sc, (select @rank:=0) as t
+order by score desc;
+```
+
+#### 18.1 按各科成绩排序，并显示排名，score 重复时合并后排序
+
+```sql
+select SId,
+       CId,
+       score,
+       case
+           when @score = score then @`rank`
+           when @score:=SC.score then @`rank` := @`rank` + 1 end as 名次
+from sc,
+     (select @rank := 0, @score := 0) as t;
+```
+
+注意：第二个 `when`是恒成立的，起到了一个赋值的作用
+
+### 19、查询学生的总成绩，并进行排名，总分相同时保留名次空缺
+
+使用自定义变量
+
+1. 先求学生总成绩
+2. 自定义变量记录
+
+```sql
+select a.*,
+       @rank2:=if(@sco=scos,'',@rank2+1) as 名次,
+       @sco:=scos
+    from
+         (select SId, sum(score) as scos
+    from SC
+    group by SId
+    order by scos desc) a,
+    (select @rank2 := 0, @sco := 0) b;
+```
+
