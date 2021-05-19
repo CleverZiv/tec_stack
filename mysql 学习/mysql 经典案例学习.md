@@ -380,3 +380,85 @@ select a.*,
     (select @rank2 := 0, @sco := 0) b;
 ```
 
+### 19、统计各科成绩各分数段人数、课程编号、课程名称及所占百分比
+
+同 17，根据 cid 分组，需要课程名称，需要再最后联结 Course 表
+
+```sql
+select t.*, c.Cname
+from (select a.CId,
+             sum(case when score < 60 then 1 else 0 end)                            as 低于60,
+             sum(case when score < 60 then 1 else 0 end) / count(1)                 as 低于60百分比,
+             sum(case when score >= 60 and score < 70 then 1 else 0 end)            as 60到70,
+             sum(case when score >= 60 and score < 70 then 1 else 0 end) / count(1) as 60到70百分比,
+             sum(case when score >= 70 and score < 80 then 1 else 0 end)            as 70到80,
+             sum(case when score >= 70 and score < 80 then 1 else 0 end) / count(1) as 70到80百分比,
+             sum(case when score >= 80 and score < 90 then 1 else 0 end)            as 80到90,
+             sum(case when score >= 80 and score < 90 then 1 else 0 end) / count(1) as 80到90百分比,
+             sum(case when score >= 90 then 1 else 0 end)                           as 90到100,
+             sum(case when score >= 90 then 1 else 0 end) / count(1)                as 90到100百分比
+
+      from SC a
+      group by a.CId) t
+         inner join Course c on t.CId = c.CId
+```
+
+### 20、查询各科成绩前三名的记录
+
+思路：前三名的转化为“若大于此成绩的数量少于3即为前三名”
+
+```sql
+select a.*
+from SC a
+where (select count(1) from sc b where b.CId = a.CId and b.score > a.score) < 3
+order by CId;
+```
+
+### 21、查询每门课程被选修的学生数
+
+```sql
+select CId,count(1)
+from SC
+group by CId;
+```
+
+### 22、查询出只选修两门课程的学生学号和姓名
+
+```sql
+select a.*
+from (select SId
+      from SC
+      group by SId
+      having count(1) = 2) t
+         inner join Student a on t.SId = a.SId
+```
+
+### 23、查询男生、女生人数
+
+```sql
+select a.Ssex, count(1)
+from Student a
+group by a.Ssex
+```
+
+### 24、查询名字中带有“风”的学生信息
+
+```sql
+select a.*
+from Student a
+where a.Sname like '%风%'
+```
+
+### 25、查询同名同性的学生名单，并统计同名同性的人数
+
+```sql
+select a.Sname, a.Ssex, count(1)
+from Student a
+         inner join Student b
+                    on a.Sname = b.Sname and a.Ssex = b.Ssex
+                        and a.SId != b.SId
+group by a.Sname, a.Ssex;
+```
+
+
+
