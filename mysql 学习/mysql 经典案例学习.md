@@ -460,5 +460,87 @@ from Student a
 group by a.Sname, a.Ssex;
 ```
 
+### 26、查询 1990 年出生的学生名单
 
+使用 `year`函数
+
+```sql
+select *
+from Student
+where year(Student.Sage) = 1990
+```
+
+### 27、查询每门课程的平均成绩，结果按照平均成绩的降序排列，平均成绩相同时，按照课程编号升序排列
+
+```sql
+select CId, avg(score) as avg_score
+from SC
+group by CId
+order by avg_score desc, CId asc;
+```
+
+### 28、查询平均成绩大于等于85分的学生学号、姓名和平均成绩
+
+```sql
+select t.*, a.Sname
+from (select SId, avg(score) as avg_score
+      from SC
+      group by SId
+      having avg_score > 84) t
+         inner join Student a on a.SId = t.SId
+```
+
+### 29、查询课程名称为【数学】，且分数低于60的学生名称和分数
+
+```sql
+select c.Sname, b.score
+from SC b
+         inner join Student c on b.SId = c.SId
+    and b.CId = (select a.CId
+                 from Course a
+                 where a.Cname = '数学') and b.score < 60
+```
+
+### 29、查询所有学生的课程及分数情况
+
+```sql
+select *
+from Student a
+         left join SC b on a.SId = b.SId
+```
+
+### 30、查询任意一门课程在70分以上的学生姓名、课程名称和分数
+
+```sql
+select t.SId, a.score, a.CId, c.Cname
+from (select SId,
+             sum(case when score < 70 then 1 else 0 end) as num
+      from SC
+      group by SId
+      having num = 0) t
+         inner join SC a on a.SId = t.SId
+         inner join Course c on a.CId = c.CId
+```
+
+### 31、查询存在不及格的课程
+
+使用条件查询
+
+```sql
+select CId,
+       sum(case when score < 60 then 1 else 0 end) as num
+from SC
+group by CId
+having num > 0
+```
+
+### 32、查询课程编号为 01，且课程成绩在 80 分以上的学生学号和姓名
+
+```sql
+select *
+from SC
+         inner join Student S on SC.SId = S.SId
+where CId = '01'
+  and score > 79
+```
 
