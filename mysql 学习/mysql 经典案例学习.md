@@ -544,3 +544,60 @@ where CId = '01'
   and score > 79
 ```
 
+### 33、求每门课程的学生人数
+
+```sql
+select CId, count(1)
+from SC
+group by CId
+```
+
+### 34、假设成绩不重复，查询选秀[张三]老师所授课程中，学生成绩最高的学生信息和成绩
+
+```sql
+select SId, score
+from SC c
+where CId in (select CId
+              from Teacher a
+                       inner join Course b on a.TId = b.TId
+              where Tname = '张三')
+order by score desc
+limit 1
+```
+
+### 35、成绩有重复的情况下，查询选秀[张三]老师所授课程中，学生成绩最高的学生信息和成绩
+
+1. 先找出该课程的最高分
+2. 然后找出该课程最高分对应的学生
+
+```sql
+select d.*
+from SC d
+         inner join (select CId, score
+                     from SC c
+                     where CId in (select CId
+                                   from Teacher a
+                                            inner join Course b on a.TId = b.TId
+                                   where Tname = '张三')
+                     order by score desc
+                     limit 1) f on d.score = f.score and d.CId = f.CId
+```
+
+### 36、查询不同课程成绩相同的学生编号、课程编号、学生成绩
+
+```sql
+select a.*
+from SC a
+         inner join SC b
+                    on a.score = b.score and a.CId != b.CId and a.SId != b.SId
+```
+
+### 37、统计每门课程的学生选修人数
+
+```sql
+select CId, count(1) as con
+from SC
+group by CId
+having count(1) > 5
+```
+
